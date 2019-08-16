@@ -19,7 +19,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/elliottsam/winrm-dns-client/dns"
+	"github.com/Bourne-ID/winrm-dns-client/dns"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
