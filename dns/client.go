@@ -15,7 +15,7 @@ type Client struct {
 	ServerName string
 	Username   string
 	Password   string
-	Port       int
+	Port       uint16
 	HTTPS      bool
 	Insecure   bool
 	Client     *winrm.Client
