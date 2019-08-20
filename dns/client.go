@@ -39,7 +39,7 @@ func GenerateClient(sn, un, pwd string) Client {
 
 // ConfigureWinRMClient creates the connection to the winrm server
 func (c *Client) ConfigureWinRMClient() error {
-	endpoint := winrm.NewEndpoint(c.ServerName, 5985, false, false, nil, nil, nil, 0)
+	endpoint := winrm.NewEndpoint(c.ServerName, c.Port, c.HTTPS, c.Insecure, nil, nil, nil, 0)
 	client, err := winrm.NewClient(endpoint, c.Username, c.Password)
 	if err != nil {
 		return fmt.Errorf("Error creating WinRM client: %v", err)
