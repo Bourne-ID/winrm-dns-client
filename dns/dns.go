@@ -3,6 +3,7 @@ package dns
 import (
 	"fmt"
 	"strings"
+	"log"
 )
 
 // Record containing information regarding DNS record
@@ -33,7 +34,7 @@ Get-DnsServerResourceRecord -ZoneName {{.Dnszone}}{{ if .Name }} -Name {{.Name}}
 		return []Record{}, fmt.Errorf("Running PowerShell script: %v", err)
 	}
 	if output.stdout == "" {
-		return []Record{Record{ID: ""}}, nil //doesn't exist any more so set ID to be blank
+		return []Record{Record{}}, nil //no records found
 	}
 	output.stdout = makeResponseArray(output.stdout)
 	resp, err := unmarshalResponse(output.stdout)
@@ -59,7 +60,7 @@ Get-DnsServerResourceRecord -ZoneName {{.Dnszone}}{{ if .Name }} -Name {{.Name}}
 		return Record{}, fmt.Errorf("Running PowerShell script: %v", err)
 	}
 	if output.stdout == "" {
-		return Record{}, fmt.Errorf("No Record found: %v", rec.Name)
+		return Record{}, nil //no records found
 	}
 	output.stdout = makeResponseArray(output.stdout)
 
@@ -67,12 +68,13 @@ Get-DnsServerResourceRecord -ZoneName {{.Dnszone}}{{ if .Name }} -Name {{.Name}}
 	if err != nil {
 		return Record{}, fmt.Errorf("Unmarshalling response: %v", err)
 	}
-	for _, v := range *convertResponse(resp, rec) {
-		if v.Value == rec.Value {
-			return v, nil
-		}
+	
+	resp := *convertResponse(resp, rec)
+	if len(resp) > 0 {
+		return resp[0]
+	} else {
+		return Record{}, nil
 	}
-	return Record{ID: ""}, nil // Not found therefore set ID to blank to make Terraform aware that this resource no longer exists
 }
 
 // ReadRecordfromID retrieves specifc DNS record based on record ID
@@ -252,6 +254,7 @@ Set-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -NewInputObject $new -OldIn
 
 // RecordExist returns if record exists or not
 func (c *Client) RecordExist(rec Record) bool {
+	log.Printf("Checking for record %v", rec)
 	var records []Record
 
 	// if rec.ID != "" {
@@ -262,10 +265,10 @@ func (c *Client) RecordExist(rec Record) bool {
 	// 	}
 	// 	records = append(records, resp)
 	// } else {
-		records, _ = c.ReadRecords(rec)
+		records, _ = c.ReadRecord(rec)
 	// }
 
-	if len(records) > 0 {
+	return len(records) > 0
 		for _, v := range records {
 			if v.Value == rec.Value {
 				return true
