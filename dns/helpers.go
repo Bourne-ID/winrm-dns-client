@@ -47,7 +47,7 @@ func convertResponse(r []interface{}, origrec Record) *[]Record {
 				Value:   strings.Split(r[i].(map[string]interface{})["RecordData"].(map[string]interface{})["CimInstanceProperties"].([]interface{})[0].(string), "\"")[1],
 				TTL:     r[i].(map[string]interface{})["TimeToLive"].(map[string]interface{})["TotalSeconds"].(float64),
 			}
-			rec.ID = fmt.Sprintf("%s|%s|%s", rec.Dnszone, rec.Name, rec.Value)
+			rec.ID = fmt.Sprintf("%s|%s", rec.Dnszone, rec.Name)
 		case string:
 			rec = Record{
 				Dnszone: origrec.Dnszone,
@@ -56,7 +56,7 @@ func convertResponse(r []interface{}, origrec Record) *[]Record {
 				Value:   strings.Split(r[i].(map[string]interface{})["RecordData"].(map[string]interface{})["CimInstanceProperties"].(string), "\"")[1],
 				TTL:     r[i].(map[string]interface{})["TimeToLive"].(map[string]interface{})["TotalSeconds"].(float64),
 			}
-			rec.ID = fmt.Sprintf("%s|%s|%s", rec.Dnszone, rec.Name, rec.Value)
+			rec.ID = fmt.Sprintf("%s|%s", rec.Dnszone, rec.Name)
 		}
 		records = append(records, rec)
 
