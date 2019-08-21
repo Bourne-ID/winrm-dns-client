@@ -2,7 +2,7 @@ package dns
 
 import (
 	"fmt"
-
+	
 	"strings"
 
 	"github.com/masterzen/winrm"

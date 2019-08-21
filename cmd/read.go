@@ -32,8 +32,8 @@ var readCmd = &cobra.Command{
 from a Microsoft DNS Zone
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if dnsZone == "" && id == "" {
-			fmt.Println("DnsZone or ID are required parameter")
+		if dnsZone == "" {
+			fmt.Println("DnsZone is a required parameter")
 			os.Exit(1)
 		}
 		ClientConfig := dns.GenerateClient(viper.GetString("servername"), viper.GetString("username"), viper.GetString("password"))
@@ -43,22 +43,14 @@ from a Microsoft DNS Zone
 			resp []dns.Record
 			err  error
 		)
-		if id != "" {
-			fmt.Println("Checking record exists")
-			rec, err := ClientConfig.ReadRecordfromID(id)
-			if err != nil {
-				log.Fatal("Error reading record from ID:", err)
-			}
-			resp = append(resp, rec)
-		} else {
-			rec := dns.Record{
-				Dnszone: dnsZone,
-				Name:    name,
-			}
-			resp, err = ClientConfig.ReadRecords(rec)
-			if err != nil {
-				log.Fatal("Error:", err)
-			}
+		
+		rec := dns.Record{
+			Dnszone: dnsZone,
+			Name:    name,
+		}
+		resp, err = ClientConfig.ReadRecords(rec)
+		if err != nil {
+			log.Fatal("Error:", err)
 		}
 
 		dns.OutputTable(resp)
@@ -71,7 +63,6 @@ func init() {
 
 	readCmd.PersistentFlags().StringVarP(&dnsZone, "DnsZone", "d", "", "DNS Zone to read against, either this or ID is required")
 	readCmd.PersistentFlags().StringVarP(&name, "Name", "n", "", "Name of record to lookup")
-	readCmd.PersistentFlags().StringVarP(&id, "ID", "i", "", "ID of record to lookup, either this or DNS Zone is required")
 	readCmd.MarkPersistentFlagRequired("DnsZone")
 
 }

@@ -17,7 +17,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/Bourne-ID/winrm-dns-client/dns"
 	"github.com/spf13/cobra"
@@ -31,20 +30,14 @@ var deleteCmd = &cobra.Command{
 	Long:  `Delete DNS record from Microsoft DNS`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var rec dns.Record
-		if id == "" || (dnsZone == "" && name == "" && value == "") {
-			log.Fatal("Please specify ID or DnsZone, Name and Value as parameters")
+		if dnsZone == "" || name == "" || value == "" {
+			log.Fatal("Please specify DnsZone, Name and Value as parameters")
 		}
-
-		if id != "" {
-			rec.Dnszone = strings.Split(id, "|")[0]
-			rec.Name = strings.Split(id, "|")[1]
-			rec.Value = strings.Split(id, "|")[2]
-		} else {
-			rec.Dnszone = dnsZone
-			rec.Name = name
-			rec.Value = value
-		}
-
+		
+		rec.Dnszone = dnsZone
+		rec.Name = name
+		rec.Value = value
+		
 		ClientConfig := dns.GenerateClient(viper.GetString("servername"), viper.GetString("username"), viper.GetString("password"))
 		ClientConfig.ConfigureWinRMClient()
 
@@ -67,5 +60,4 @@ func init() {
 	deleteCmd.PersistentFlags().StringVarP(&name, "Name", "n", "", "Name of record to create, this is required")
 	deleteCmd.PersistentFlags().StringVarP(&recordType, "Type", "t", "", "Type of DNS record to create, this is required")
 	deleteCmd.PersistentFlags().StringVarP(&value, "Value", "v", "", "Value of DNS record, this is required")
-	deleteCmd.PersistentFlags().StringVarP(&id, "ID", "i", "", "ID of record to delete")
 }

@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"log"
-	"strings"
 
 	"github.com/Bourne-ID/winrm-dns-client/dns"
 	"github.com/spf13/cobra"
@@ -30,19 +29,13 @@ var updateCmd = &cobra.Command{
 	Long:  `Update existing DNS record with new value`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var rec dns.Record
-		if id == "" && (dnsZone == "" || name == "" || value == "") {
-			log.Fatal("Please specify ID or DnsZone, Name and Value as parameters")
+		if dnsZone == "" || name == "" || value == "" {
+			log.Fatal("Please specify DnsZone, Name and Value as parameters")
 		}
 
-		if id != "" {
-			rec.Dnszone = strings.Split(id, "|")[0]
-			rec.Name = strings.Split(id, "|")[1]
-			rec.Value = strings.Split(id, "|")[2]
-		} else {
-			rec.Dnszone = dnsZone
-			rec.Name = name
-			rec.Value = value
-		}
+		rec.Dnszone = dnsZone
+		rec.Name = name
+		rec.Value = value
 
 		ClientConfig := dns.GenerateClient(viper.GetString("servername"), viper.GetString("username"), viper.GetString("password"))
 		ClientConfig.ConfigureWinRMClient()
@@ -67,6 +60,5 @@ func init() {
 	updateCmd.PersistentFlags().StringVarP(&value, "Value", "v", "", "Value of DNS record, this is required")
 	updateCmd.PersistentFlags().StringVarP(&newvalue, "NewValue", "u", "", "Value to update DNS record")
 	updateCmd.PersistentFlags().Float64VarP(&newttl, "NewTTL", "l", 0, "New TTL value to update DNS record")
-	updateCmd.PersistentFlags().StringVarP(&id, "ID", "i", "", "ID of record to update")
 
 }
