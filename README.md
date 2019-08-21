@@ -4,7 +4,10 @@
 
 winrm-dns-client is a CLI and Go library for interacting with remote Microsoft DNS servers, it currently
 utilises WinRM for remote connectivity, in the future when available, I will udpate this to use OpenSSH.
- 
+
+#### Incompatibility with Parent Fork
+Changes to this fork will break any Terraform usage on the parent fork - specifically the ID field for Terraform has changed to help detect drift and be more flexible in a large environment.ds
+
 #### Requirements
 In order to use this, the following must be met:
 - DNS Server needs to be running on `Windows Server 2012`, or greater

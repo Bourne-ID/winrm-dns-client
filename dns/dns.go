@@ -33,7 +33,7 @@ Get-DnsServerResourceRecord -ZoneName {{.Dnszone}}{{ if .Name }} -Name {{.Name}}
 		return []Record{}, fmt.Errorf("Running PowerShell script: %v", err)
 	}
 	if output.stdout == "" {
-		return []Record{}, fmt.Errorf("No Record found: %v", rec.Name)
+		return []Record{Record{ID: ""}}, nil //doesn't exist any more so set ID to be blank
 	}
 	output.stdout = makeResponseArray(output.stdout)
 	resp, err := unmarshalResponse(output.stdout)
@@ -72,19 +72,18 @@ Get-DnsServerResourceRecord -ZoneName {{.Dnszone}}{{ if .Name }} -Name {{.Name}}
 			return v, nil
 		}
 	}
-	return Record{}, fmt.Errorf("Record not found: %s", rec.Name)
+	return Record{ID: ""}, nil // Not found therefore set ID to blank to make Terraform aware that this resource no longer exists
 }
 
 // ReadRecordfromID retrieves specifc DNS record based on record ID
 func (c *Client) ReadRecordfromID(recID string) (Record, error) {
 	id := strings.Split(recID, "|")
-	if len(id) != 3 {
+	if len(id) != 2 {
 		return Record{}, fmt.Errorf("ID is incorrect")
 	}
 	rec := Record{
 		Dnszone: id[0],
 		Name:    id[1],
-		Value:   id[2],
 	}
 	result, err := c.ReadRecords(rec)
 	if err != nil {
@@ -114,7 +113,7 @@ Add-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -Name {{ .Name }} -CName -H
 	if c.RecordExist(rec) {
 		return []Record{}, fmt.Errorf("Record already exists: %v", rec)
 	}
-	rec.ID = fmt.Sprintf("%s|%s|%s", rec.Dnszone, rec.Name, rec.Value)
+	rec.ID = fmt.Sprintf("%s|%s", rec.Dnszone, rec.Name)
 	switch rec.Type {
 	case "A":
 		pscript, err = tmplExec(rec, tmplscriptA)
@@ -126,6 +125,8 @@ Add-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -Name {{ .Name }} -CName -H
 		if err != nil {
 			return []Record{}, fmt.Errorf("Creating template: %v", err)
 		}
+	default:
+		return []Record{}, fmt.Errorf("Method %s Not Implemented", rec.Type)
 	}
 	_, err = c.ExecutePowerShellScript(pscript)
 	if err != nil {
@@ -170,6 +171,8 @@ func (c *Client) DeleteRecord(rec Record) error {
 		if err != nil {
 			return fmt.Errorf("Creating template: %v", err)
 		}
+	default:
+		return fmt.Errorf("Method %s Not Implemented", rec.Type)
 	}
 
 	_, err = c.ExecutePowerShellScript(pscript)
@@ -251,16 +254,16 @@ Set-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -NewInputObject $new -OldIn
 func (c *Client) RecordExist(rec Record) bool {
 	var records []Record
 
-	if rec.ID != "" {
-		rec.Value = strings.Split(rec.ID, "|")[2]
-		resp, err := c.ReadRecordfromID(rec.ID)
-		if err != nil {
-			return false
-		}
-		records = append(records, resp)
-	} else {
+	// if rec.ID != "" {
+	// 	rec.Value = strings.Split(rec.ID, "|")[2]
+	// 	resp, err := c.ReadRecordfromID(rec.ID)
+	// 	if err != nil {
+	// 		return false
+	// 	}
+	// 	records = append(records, resp)
+	// } else {
 		records, _ = c.ReadRecords(rec)
-	}
+	// }
 
 	if len(records) > 0 {
 		for _, v := range records {
