@@ -109,11 +109,18 @@ Add-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -Name {{ .Name }} -A -IPv4A
 Add-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -Name {{ .Name }} -CName -HostNameAlias {{ .Value }} -TimeToLive (New-TimeSpan -Seconds {{ .TTL }})
 `
 	var (
+		recordExist bool
 		pscript string
 		err     error
 	)
 
-	if c.RecordExist(rec) {
+	recordExist, err = c.RecordExist(rec)
+
+	if err != nil {
+			return []Record{}, err
+	}
+
+	if recordExist {
 		return []Record{}, fmt.Errorf("Record already exists: %v", rec)
 	}
 	rec.ID = fmt.Sprintf("%s|%s", rec.Dnszone, rec.Name)
@@ -155,11 +162,18 @@ func (c *Client) DeleteRecord(rec Record) error {
 (Get-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -Name {{ .Name }}) | ?{$_.HostName -eq '{{ .Name }}' -and $_.RecordData.HostNameAlias -match '{{ .Value }}'} | Remove-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -Force
 `
 	var (
+		recordExist bool
 		pscript string
 		err     error
 	)
 
-	if !c.RecordExist(rec) {
+	recordExist, err = c.RecordExist(rec)
+	
+	if err != nil {
+			return err
+	}
+
+	if !recordExist {
 		return fmt.Errorf("Record not found: %v", rec)
 	}
 
@@ -211,11 +225,18 @@ $new.TimeToLive = New-Timespan -Seconds {{ .NewTTL }}
 Set-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -NewInputObject $new -OldInputObject $old
 `
 	var (
+		recordExist bool
 		pscript string
 		err     error
 	)
 
-	if !c.RecordExist(rec) {
+	recordExist, err = c.RecordExist(rec)
+
+	if err != nil {
+		return Record{}, err
+    }
+
+	if !recordExist {
 		return Record{}, fmt.Errorf("Record not found: %v", rec.Name)
 	}
 	rec, err = c.ReadRecord(rec)
@@ -254,28 +275,14 @@ Set-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -NewInputObject $new -OldIn
 }
 
 // RecordExist returns if record exists or not
-func (c *Client) RecordExist(rec Record) bool {
+func (c *Client) RecordExist(rec Record) (bool, error) {
 	log.Printf("Checking for record %v", rec)
-	var records Record
 
-	// if rec.ID != "" {
-	// 	rec.Value = strings.Split(rec.ID, "|")[2]
-	// 	resp, err := c.ReadRecordfromID(rec.ID)
-	// 	if err != nil {
-	// 		return false
-	// 	}
-	// 	records = append(records, resp)
-	// } else {
-		records, _ = c.ReadRecord(rec)
-	// }
+	records, err := c.ReadRecord(rec)
 
-	return records.Name == rec.Name	
+	if err != nil {
+		return false, err
+	}
+	return records.Name == rec.Name, nil
 
-	// 	for _, v := range records {
-	// 		if v.Name == rec.Name {
-	// 			return true
-	// 		}
-	// 	}
-	
-	// return false
 }
