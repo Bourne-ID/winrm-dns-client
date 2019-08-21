@@ -69,12 +69,13 @@ Get-DnsServerResourceRecord -ZoneName {{.Dnszone}}{{ if .Name }} -Name {{.Name}}
 		return Record{}, fmt.Errorf("Unmarshalling response: %v", err)
 	}
 	
-	resp := *convertResponse(resp, rec)
-	if len(resp) > 0 {
-		return resp[0]
-	} else {
-		return Record{}, nil
-	}
+	convertedResp := *convertResponse(resp, rec)
+	if len(convertedResp) > 0 {
+		return convertedResp[0], nil
+	} 
+	
+	return Record{}, nil
+	
 }
 
 // ReadRecordfromID retrieves specifc DNS record based on record ID
@@ -255,7 +256,7 @@ Set-DnsServerResourceRecord -ZoneName {{ .Dnszone }} -NewInputObject $new -OldIn
 // RecordExist returns if record exists or not
 func (c *Client) RecordExist(rec Record) bool {
 	log.Printf("Checking for record %v", rec)
-	var records []Record
+	var records Record
 
 	// if rec.ID != "" {
 	// 	rec.Value = strings.Split(rec.ID, "|")[2]
@@ -268,12 +269,13 @@ func (c *Client) RecordExist(rec Record) bool {
 		records, _ = c.ReadRecord(rec)
 	// }
 
-	return len(records) > 0
-		for _, v := range records {
-			if v.Value == rec.Value {
-				return true
-			}
-		}
-	}
-	return false
+	return records.Name == rec.Name	
+
+	// 	for _, v := range records {
+	// 		if v.Name == rec.Name {
+	// 			return true
+	// 		}
+	// 	}
+	
+	// return false
 }
